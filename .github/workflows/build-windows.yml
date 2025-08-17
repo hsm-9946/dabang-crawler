@@ -72,6 +72,7 @@ jobs:
         if (Test-Path "data/regions_kr.json") { Copy-Item "data/regions_kr.json" "package/data/" }
         if (Test-Path "README.md") { Copy-Item "README.md" "package/" }
         if (Test-Path "assets/icon.ico") { Copy-Item "assets/icon.ico" "package/" }
+        if (Test-Path "LICENSE") { Copy-Item "LICENSE" "package/" }
         
     - name: Create batch files
       run: |

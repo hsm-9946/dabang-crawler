@@ -261,14 +261,18 @@ class App(tk.Tk):
                 self._append_log("❌ 선택된 매물 유형이 없습니다.")
                 return
             
-            # TypeScript 스크래퍼 실행
-            script_path = ROOT / "scripts" / "dabang_scrape.ts"
-            
+            # Python 스크래퍼 실행
             self._append_log(f"🚀 다중 매물 유형 스크래퍼 시작")
             self._append_log(f"📍 지역: {region_query}")
             self._append_log(f"🏠 선택된 매물 유형: {', '.join(selected_types)}")
             self._append_log(f"📊 최대 수집 건수: {self.var_limit.get()}")
             self._append_log("─" * 80)
+            
+            # Python 스크래퍼 직접 실행
+            from scraper.dabang_scraper import DabangScraper, ScrapeOptions
+            from storage.exporter import save_to_excel
+            
+            all_items = []
             
             # 각 매물 유형별로 순차 실행
             for i, property_type in enumerate(selected_types):
@@ -277,61 +281,45 @@ class App(tk.Tk):
                     
                 self._append_log(f"\n📋 [{i+1}/{len(selected_types)}] {property_type} 크롤링 시작...")
                 
-                cmd = [
-                    "npx", "tsx", str(script_path),
-                    "--type", property_type,
-                    "--region", region_query,
-                    "--limit", self.var_limit.get()
-                ]
-                
-                # Headless 모드 설정 추가
-                if self.var_headless.get():
-                    cmd.extend(["--headless", "true"])
-                
-                # 상세페이지 진입 활성화 (정확한 정보 추출을 위해)
-                cmd.extend(["--skip-detail", "false"])
-                
-                self._append_log(f"🔧 명령어: {' '.join(cmd)}")
-                
-                # 프로세스 실행
-                self._process = subprocess.Popen(
-                    cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True,
-                    encoding='utf-8',
-                    bufsize=1,
-                    universal_newlines=True
-                )
-                
-                # 실시간 출력 처리
-                for line in iter(self._process.stdout.readline, ''):
-                    if self._stop.is_set():
-                        break
-                        
-                    line = line.strip()
-                    if line:
-                        self._append_log(line)
-                        
-                        # 완료 메시지 감지
-                        if "수집 완료!" in line or "🎉 수집 완료!" in line:
-                            self._append_log(f"✅ {property_type} 크롤링 완료!")
-                            break
-                
-                # 프로세스 종료 대기
-                if self._process:
-                    return_code = self._process.wait()
-                    if return_code == 0:
-                        self._append_log(f"✅ {property_type} 크롤링이 성공적으로 완료되었습니다!")
+                try:
+                    # 스크래핑 옵션 설정
+                    opts = ScrapeOptions(
+                        region=region_query,
+                        property_type=property_type,
+                        price_min=0,
+                        price_max=2000000,
+                        max_items=int(self.var_limit.get()),
+                        max_pages=5,
+                        headless=self.var_headless.get(),
+                    )
+                    
+                    # 스크래퍼 실행
+                    scraper = DabangScraper(opts, self._stop)
+                    items = scraper.run()
+                    
+                    if items:
+                        all_items.extend(items)
+                        self._append_log(f"✅ {property_type} 크롤링 완료! {len(items)}개 수집")
                         
                         # 개별 매물 유형 완료 후에도 엑셀 열기 (옵션에 따라)
                         if self.var_auto_open_excel.get():
                             self._append_log(f"📊 {property_type} 결과 확인을 위해 엑셀 파일을 여는 중...")
                             self._open_latest_excel()
                     else:
-                        self._append_log(f"❌ {property_type} 크롤링 중 오류 발생 (코드: {return_code})")
-                        self.var_status.set("오류")
-                        break
+                        self._append_log(f"⚠️ {property_type} 크롤링 완료했지만 수집된 데이터가 없습니다.")
+                        
+                except Exception as e:
+                    self._append_log(f"❌ {property_type} 크롤링 중 오류 발생: {e}")
+                    logger.exception(f"{property_type} 크롤링 오류")
+                    continue
+                
+                # 다음 매물 유형으로 넘어가기 전 잠시 대기
+                if i < len(selected_types) - 1 and not self._stop.is_set():
+                    self._append_log("⏳ 다음 매물 유형으로 넘어가는 중...")
+                    import time
+                    time.sleep(2)
+                
+
                 
                 # 다음 매물 유형으로 넘어가기 전 잠시 대기
                 if i < len(selected_types) - 1 and not self._stop.is_set():
@@ -340,16 +328,32 @@ class App(tk.Tk):
                     time.sleep(2)
             
             # 모든 매물 유형 완료
-            if not self._stop.is_set():
+            if not self._stop.is_set() and all_items:
                 self.var_status.set("완료")
-                self._append_log("🎉 모든 매물 유형 크롤링이 완료되었습니다!")
+                self._append_log(f"🎉 모든 매물 유형 크롤링이 완료되었습니다! 총 {len(all_items)}개 수집")
                 
-                # 크롤링 완료 후 자동으로 엑셀 파일 열기 (옵션에 따라)
-                if self.var_auto_open_excel.get():
-                    self._append_log("📊 결과 확인을 위해 엑셀 파일을 여는 중...")
-                    self._open_latest_excel()
-                else:
-                    self._append_log("📊 엑셀 자동 열기가 비활성화되어 있습니다.")
+                # 최종 결과를 엑셀로 저장
+                try:
+                    output_path = Path(settings.paths.output)
+                    output_file = save_to_excel(all_items, output_path, region_query)
+                    self._append_log(f"📊 결과가 저장되었습니다: {output_file}")
+                    
+                    # 크롤링 완료 후 자동으로 엑셀 파일 열기 (옵션에 따라)
+                    if self.var_auto_open_excel.get():
+                        self._append_log("📊 결과 확인을 위해 엑셀 파일을 여는 중...")
+                        self._open_latest_excel()
+                    else:
+                        self._append_log("📊 엑셀 자동 열기가 비활성화되어 있습니다.")
+                        
+                except Exception as e:
+                    self._append_log(f"❌ 결과 저장 중 오류 발생: {e}")
+                    logger.exception("결과 저장 오류")
+            elif not all_items:
+                self.var_status.set("완료")
+                self._append_log("⚠️ 크롤링이 완료되었지만 수집된 데이터가 없습니다.")
+            else:
+                self.var_status.set("중단")
+                self._append_log("⏹️ 크롤링이 중단되었습니다.")
             
         except Exception as e:
             logger.exception("실행 중 오류 발생: {}", e)
