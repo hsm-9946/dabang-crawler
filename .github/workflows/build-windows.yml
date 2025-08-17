@@ -109,46 +109,44 @@ jobs:
         
     - name: Create README for package
       run: |
-        @"
-# 다방 부동산 크롤러 Windows 패키지
-
-## 설치 및 실행
-
-1. 다운로드한 폴더를 원하는 위치에 압축 해제
-2. `다방크롤러_실행.bat` 파일을 더블클릭하여 실행
-3. GUI 모드 또는 CLI 모드 선택
-
-## GUI 모드
-- 그래픽 인터페이스를 통한 쉬운 사용
-- 지역, 매물 타입, 수량 등을 마우스로 설정
-- 실시간 진행 상황 확인
-
-## CLI 모드
-- 명령줄을 통한 고급 사용
-- 자동화 및 배치 처리에 적합
-- 사용법: `다방크롤러_CLI.exe --region "지역명" --type "매물타입" --limit 개수`
-
-## 설정 파일
-- `config/settings.toml`: 기본 설정 파일
-- 필요에 따라 수정 가능
-
-## 출력 파일
-- `output/`: 수집된 데이터가 Excel 파일로 저장됨
-- `logs/`: 실행 로그 파일
-
-## 시스템 요구사항
-- Windows 10/11 (64비트)
-- 인터넷 연결 필요
-- 최소 4GB RAM 권장
-
-## 문제 해결
-- 실행이 안 되는 경우: Windows Defender 또는 바이러스 백신에서 예외 처리
-- 데이터 수집이 안 되는 경우: 인터넷 연결 확인 및 다방 웹사이트 접속 테스트
-
-## 라이선스
-이 소프트웨어는 교육 및 개인 사용 목적으로만 사용하세요.
-상업적 사용 시 다방의 이용약관을 확인하세요.
-"@ > package/README_Windows.txt
+        echo "# 다방 부동산 크롤러 Windows 패키지" > package/README_Windows.txt
+        echo "" >> package/README_Windows.txt
+        echo "## 설치 및 실행" >> package/README_Windows.txt
+        echo "" >> package/README_Windows.txt
+        echo "1. 다운로드한 폴더를 원하는 위치에 압축 해제" >> package/README_Windows.txt
+        echo "2. `다방크롤러_실행.bat` 파일을 더블클릭하여 실행" >> package/README_Windows.txt
+        echo "3. GUI 모드 또는 CLI 모드 선택" >> package/README_Windows.txt
+        echo "" >> package/README_Windows.txt
+        echo "## GUI 모드" >> package/README_Windows.txt
+        echo "- 그래픽 인터페이스를 통한 쉬운 사용" >> package/README_Windows.txt
+        echo "- 지역, 매물 타입, 수량 등을 마우스로 설정" >> package/README_Windows.txt
+        echo "- 실시간 진행 상황 확인" >> package/README_Windows.txt
+        echo "" >> package/README_Windows.txt
+        echo "## CLI 모드" >> package/README_Windows.txt
+        echo "- 명령줄을 통한 고급 사용" >> package/README_Windows.txt
+        echo "- 자동화 및 배치 처리에 적합" >> package/README_Windows.txt
+        echo "- 사용법: `다방크롤러_CLI.exe --region \"지역명\" --type \"매물타입\" --limit 개수`" >> package/README_Windows.txt
+        echo "" >> package/README_Windows.txt
+        echo "## 설정 파일" >> package/README_Windows.txt
+        echo "- `config/settings.toml`: 기본 설정 파일" >> package/README_Windows.txt
+        echo "- 필요에 따라 수정 가능" >> package/README_Windows.txt
+        echo "" >> package/README_Windows.txt
+        echo "## 출력 파일" >> package/README_Windows.txt
+        echo "- `output/`: 수집된 데이터가 Excel 파일로 저장됨" >> package/README_Windows.txt
+        echo "- `logs/`: 실행 로그 파일" >> package/README_Windows.txt
+        echo "" >> package/README_Windows.txt
+        echo "## 시스템 요구사항" >> package/README_Windows.txt
+        echo "- Windows 10/11 (64비트)" >> package/README_Windows.txt
+        echo "- 인터넷 연결 필요" >> package/README_Windows.txt
+        echo "- 최소 4GB RAM 권장" >> package/README_Windows.txt
+        echo "" >> package/README_Windows.txt
+        echo "## 문제 해결" >> package/README_Windows.txt
+        echo "- 실행이 안 되는 경우: Windows Defender 또는 바이러스 백신에서 예외 처리" >> package/README_Windows.txt
+        echo "- 데이터 수집이 안 되는 경우: 인터넷 연결 확인 및 다방 웹사이트 접속 테스트" >> package/README_Windows.txt
+        echo "" >> package/README_Windows.txt
+        echo "## 라이선스" >> package/README_Windows.txt
+        echo "이 소프트웨어는 교육 및 개인 사용 목적으로만 사용하세요." >> package/README_Windows.txt
+        echo "상업적 사용 시 다방의 이용약관을 확인하세요." >> package/README_Windows.txt
         
     - name: Create ZIP package
       run: |
@@ -178,27 +176,6 @@ jobs:
       with:
         tag_name: ${{ github.ref }}
         release_name: 다방크롤러 Windows v${{ github.ref_name }}
-        body: |
-          ## Windows 실행 파일 릴리즈
-          
-          ### 다운로드
-          - GUI 모드: `다방크롤러.exe`
-          - CLI 모드: `다방크롤러_CLI.exe`
-          
-          ### 주요 기능
-          - 다방 부동산 매물 자동 수집
-          - Excel 파일로 데이터 저장
-          - GUI 및 CLI 모드 지원
-          - 지역별, 매물 타입별 필터링
-          
-          ### 설치 방법
-          1. ZIP 파일 다운로드 및 압축 해제
-          2. `다방크롤러_실행.bat` 실행
-          3. GUI 또는 CLI 모드 선택
-          
-          ### 시스템 요구사항
-          - Windows 10/11 (64비트)
-          - 인터넷 연결
-          - 최소 4GB RAM
+        body: "## Windows 실행 파일 릴리즈\n\n### 다운로드\n- GUI 모드: `다방크롤러.exe`\n- CLI 모드: `다방크롤러_CLI.exe`\n\n### 주요 기능\n- 다방 부동산 매물 자동 수집\n- Excel 파일로 데이터 저장\n- GUI 및 CLI 모드 지원\n- 지역별, 매물 타입별 필터링\n\n### 설치 방법\n1. ZIP 파일 다운로드 및 압축 해제\n2. `다방크롤러_실행.bat` 실행\n3. GUI 또는 CLI 모드 선택\n\n### 시스템 요구사항\n- Windows 10/11 (64비트)\n- 인터넷 연결\n- 최소 4GB RAM"
         draft: false
         prerelease: false
