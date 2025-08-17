@@ -552,8 +552,18 @@ class DabangScraper:
             # 페이지 내 카드 파싱
             limit_this_page = cards.count()
             for i in range(limit_this_page):
+                # 수집 개수 제한 도달 시 즉시 종료
+                if self.opts.max_items and len(items) >= self.opts.max_items:
+                    self._log(f"요청 수({self.opts.max_items}) 도달")
+                    return items
+                
                 try:
                     card = cards.nth(i)
+                    
+                    # 디버깅: 카드의 실제 텍스트 내용 출력
+                    card_text = card.inner_text()
+                    self._log(f"카드 {i+1} 텍스트 내용: {card_text[:200]}...")
+                    
                     link_el = card.locator("a[href^='/room/']").first
                     href = link_el.get_attribute("href") if link_el.count() else None
                     full = urljoin(page.url, href) if href else ""
@@ -564,38 +574,154 @@ class DabangScraper:
                     if pid in seen_ids:
                         continue
 
-                    # 타임아웃 방지를 위해 개별적으로 처리
+                    # 기본 정보 파싱 (카드에서 직접)
                     try:
                         price = text_first_from_element_sync(card, CARD_PRICE) or ""
                     except Exception:
                         price = ""
                     
-                    try:
-                        details = text_first_from_element_sync(card, CARD_ADDRESS_HINT) or ""
-                    except Exception:
-                        details = ""
+                    # 상세 정보는 카드 클릭하여 상세 페이지에서 가져오기
+                    address = ""
+                    realtor = ""
+                    maintenance = ""
+                    posted_date = ""
                     
                     try:
-                        address = text_first_from_element_sync(card, CARD_ADDRESS) or ""
-                        if not address:
-                            address = self._extract_address_from_text(details) or ""
-                    except Exception:
-                        address = ""
-                    
-                    try:
-                        realtor = text_first_from_element_sync(card, CARD_REALTOR) or ""
-                    except Exception:
-                        realtor = ""
-                    
-                    try:
-                        maintenance = text_first_from_element_sync(card, CARD_MAINTENANCE)
-                    except Exception:
-                        maintenance = ""
-                    
-                    try:
-                        posted_date = text_first_from_element_sync(card, CARD_TIME)
-                    except Exception:
-                        posted_date = ""
+                        # 카드 클릭하여 상세 페이지로 이동
+                        self._log(f"카드 {i+1} 클릭하여 상세 페이지로 이동...")
+                        card.click()
+                        page.wait_for_timeout(3000)  # 페이지 로딩 대기
+                        
+                        # 상세 페이지에서 정보 추출 - TypeScript 파일 참고하여 수정
+                        # 주소 찾기
+                        try:
+                             # TypeScript의 DETAIL_ADDR 선택자들을 참고
+                             address_selectors = [
+                                 "section[data-scroll-spy-element='near'] p:has-text('시')",  # 위치 탭 내 주소
+                                 "section[data-scroll-spy-element='near'] p:has-text('구')",  # 구 포함된 주소
+                                 "section[data-scroll-spy-element='near'] p:has-text('동')",  # 동 포함된 주소
+                                 "div.sc-hbxBMb.efnhT > p",  # 스크린샷에서 확인된 정확한 주소 wrapper
+                                 "p:has-text('시')", "p:has-text('구')", "p:has-text('동')", "p:has-text('읍')",
+                                 "p:has-text(/[가-힣]+(시|도)\s+[가-힣]+(구|군)\s+[가-힣]+(동|읍|면)/)",
+                                 "div:has-text(/[가-힣]+(시|도)\s+[가-힣]+(구|군)\s+[가-힣]+(동|읍|면)/)",
+                                 "span:has-text(/[가-힣]+(시|도)\s+[가-힣]+(구|군)\s+[가-힣]+(동|읍|면)/)",
+                                 "text=/[가-힣]+(시|도)\s+[가-힣]+(구|군)\s+[가-힣]+(동|읍|면)/"
+                             ]
+                             
+                             for selector in address_selectors:
+                                 try:
+                                     address_elements = page.locator(selector)
+                                     if address_elements.count() > 0:
+                                         address = address_elements.first.inner_text().strip()
+                                         # 주소 형식 검증 (시/군/구/동/읍/리 포함)
+                                         if len(address) >= 8 and re.search(r'시|군|구|동|읍|리', address):
+                                             self._log(f"주소 찾음: {address}")
+                                             break
+                                 except Exception:
+                                     continue
+                        except Exception as e:
+                            self._log(f"주소 추출 실패: {e}")
+                        
+                        # 부동산 정보 찾기
+                        try:
+                             # TypeScript의 DETAIL_REALTOR 선택자들을 참고
+                             realtor_selectors = [
+                                 "section[data-scroll-spy-element='agent-info'] h1:has-text('부동산')",  # 중개사무소 정보 섹션의 상호 h1
+                                 "section[data-scroll-spy-element='agent-info'] h1:has-text('공인중개사')",  # 공인중개사 포함
+                                 "section[data-scroll-spy-element='agent-info'] h1:has-text('중개사무소')",  # 중개사무소 포함
+                                 "div.sc-gVrasc.ktkEIH h1",  # 스크린샷에서 확인된 정확한 중개사 h1 컨테이너
+                                 "h1:has-text('공인중개사')", "h1:has-text('중개사무소')",  # 실제 작동하는 중개사 셀렉터
+                                 "section[data-scroll-spy-element='agent-info'] a[href^='/agent/']",
+                                 "[data-testid='realtor'] h1", "[data-testid='realtor']",  # 폴백
+                                 "h1:has-text(/공인중개|중개사무소|부동산/)",
+                                 "div:has-text(/공인중개|중개사무소|부동산/)",
+                                 "p:has-text(/공인중개|중개사무소|부동산/)",
+                                 "text=/공인중개|중개사무소|부동산/"
+                             ]
+                             
+                             for selector in realtor_selectors:
+                                 try:
+                                     realtor_elements = page.locator(selector)
+                                     if realtor_elements.count() > 0:
+                                         realtor = realtor_elements.first.inner_text().strip()
+                                         # 불필요 접두사 제거 및 정리
+                                         realtor = re.sub(r'\s*(공인중개사|중개사무소|중개사)\s*', '', realtor).strip()
+                                         if len(realtor) >= 3:  # 최소 3자 이상
+                                             self._log(f"부동산 찾음: {realtor}")
+                                             break
+                                 except Exception:
+                                     continue
+                        except Exception as e:
+                            self._log(f"부동산 추출 실패: {e}")
+                        
+                        # 관리비 정보 찾기
+                        try:
+                             # TypeScript의 관리비 선택자들을 참고
+                             maintenance_selectors = [
+                                 "li:has-text('관리비')",  # 상세정보 탭 내 관리비
+                                 "p:has-text('관리비')",
+                                 "span:has-text('관리비')",
+                                 "div:has-text('관리비')",
+                                 "text=/관리비/"
+                             ]
+                             
+                             for selector in maintenance_selectors:
+                                 try:
+                                     maintenance_elements = page.locator(selector)
+                                     if maintenance_elements.count() > 0:
+                                         maintenance_text = maintenance_elements.first.inner_text()
+                                         maintenance_match = re.search(r'관리비\s*(없음|\d+만?)', maintenance_text)
+                                         if maintenance_match:
+                                             maintenance = maintenance_match.group(0).strip()
+                                             self._log(f"관리비 찾음: {maintenance}")
+                                             break
+                                 except Exception:
+                                     continue
+                        except Exception as e:
+                            self._log(f"관리비 추출 실패: {e}")
+                        
+                        # 등록일 찾기
+                        try:
+                             # TypeScript의 DETAIL_POSTED_DATE 선택자들을 참고
+                             date_selectors = [
+                                 "p.sc-dPDzVR.iYQyEM",  # 스크린샷에서 확인된 정확한 날짜 셀렉터
+                                 "p:has-text('2025.')", "p:has-text('2024.')", "p:has-text('2023.')",
+                                 "li:has-text('최초등록일')", "p:has-text('최초등록일')",
+                                 "[data-testid='posted-date']", "[class*='date']",
+                                 "div:has-text('최초등록일')",
+                                 "span:has-text('최초등록일')",
+                                 "text=/최초등록일/"
+                             ]
+                             
+                             for selector in date_selectors:
+                                 try:
+                                     date_elements = page.locator(selector)
+                                     if date_elements.count() > 0:
+                                         date_text = date_elements.first.inner_text()
+                                         # 날짜 형식 검증 (YYYY.MM.DD 또는 YYYY-MM-DD)
+                                         date_match = re.search(r'(\d{4}[.-]\d{2}[.-]\d{2})', date_text)
+                                         if date_match:
+                                             posted_date = date_match.group(1)
+                                             self._log(f"등록일 찾음: {posted_date}")
+                                             break
+                                 except Exception:
+                                     continue
+                        except Exception as e:
+                            self._log(f"등록일 추출 실패: {e}")
+                        
+                        # 뒤로 가기
+                        self._log(f"상세 페이지에서 뒤로 가기...")
+                        page.go_back()
+                        page.wait_for_timeout(2000)  # 페이지 로딩 대기
+                        
+                    except Exception as e:
+                        self._log(f"상세 페이지 정보 추출 실패: {e}")
+                        # 뒤로 가기 시도
+                        try:
+                            page.go_back()
+                            page.wait_for_timeout(2000)
+                        except Exception:
+                            pass
 
                     item = Item(
                         address=address,
@@ -606,21 +732,25 @@ class DabangScraper:
                         property_type=self.opts.property_type,
                         url=full,
                         item_id=pid,
-                        details=details,
-                        area_m2=extract_area_m2(details),
-                        floor=extract_floor(details),
+                        details="",  # details 변수가 정의되지 않았으므로 빈 문자열로 설정
+                        area_m2=0,  # 기본값 설정
+                        floor=0,  # 기본값 설정
                     )
                     items.append(item)
                     seen_ids.add(pid)
-                    self._log(f"아이템 {len(items)} 수집 완료: {item.address[:30]} {item.price_text}")
+                    # 상세한 아이템 정보 로그 출력
+                    maintenance_info = f"관리비: {item.maintenance_fee:,}원" if item.maintenance_fee else "관리비: 없음"
+                    self._log(f"아이템 {len(items)} 수집 완료:")
+                    self._log(f"  📍 주소: {item.address}")
+                    self._log(f"  💰 가격: {item.price_text}")
+                    self._log(f"  🏢 부동산: {item.realtor}")
+                    self._log(f"  📅 등록일: {item.posted_at}")
+                    self._log(f"  💸 {maintenance_info}")
+                    self._log(f"  🔗 URL: {item.url}")
+                    self._log("  " + "─" * 50)
                 except Exception as e:
                     self._log(f"카드 파싱 실패: {e}")
                     continue
-
-            # 수집 개수 제한 도달 시 종료
-            if self.opts.max_items and len(items) >= self.opts.max_items:
-                self._log(f"요청 수({self.opts.max_items}) 도달")
-                break
 
             # 페이지네이션 마운트 대기
             page.wait_for_timeout(400)  # 페이지네이션 마운트 대기
@@ -1412,41 +1542,13 @@ class DabangScraper:
         return self._resolve_list_container(page)
 
     def _remove_duplicates(self, items: List[Item]) -> List[Item]:
-        """중복 제거 - 매물 번호와 주소를 기준으로 중복 제거"""
+        """중복 제거 비활성화 - 모든 아이템을 그대로 반환"""
         if not items:
             return items
 
-        self._log(f"중복 제거 시작: 총 {len(items)}건")
+        self._log(f"중복 제거 비활성화: 총 {len(items)}건 모두 유지")
 
-        # 중복 제거를 위한 딕셔너리
-        unique_items = {}
-        removed_count = 0
-
-        for item in items:
-            # 매물 번호가 있으면 매물 번호를 키로 사용
-            if item.property_number and item.property_number.strip():
-                key = f"prop_{item.property_number.strip()}"
-            # 매물 번호가 없으면 주소와 가격을 조합하여 키 생성
-            elif item.address and item.price_text:
-                key = f"addr_{item.address.strip()}_{item.price_text.strip()}"
-            # 주소만 있으면 주소를 키로 사용
-            elif item.address:
-                key = f"addr_{item.address.strip()}"
-            else:
-                # 식별할 수 있는 정보가 없으면 건너뛰기
-                removed_count += 1
-                continue
-
-            # 이미 존재하는 키인지 확인
-            if key in unique_items:
-                removed_count += 1
-                self._log(f"중복 제거: {key}")
-            else:
-                unique_items[key] = item
-
-        result = list(unique_items.values())
-        self._log(f"중복 제거 완료: {len(items)}건 → {len(result)}건 (제거: {removed_count}건)")
-
-        return result
+        # 중복 제거하지 않고 모든 아이템을 그대로 반환
+        return items
 
 

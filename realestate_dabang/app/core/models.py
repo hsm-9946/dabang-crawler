@@ -12,7 +12,7 @@ class CrawlerInput(BaseModel):
     price_max: Optional[int] = Field(None, description="최대 가격(원)")
     property_types: List[str] = Field(default_factory=list, description="유형 리스트")
     headless: bool = Field(True, description="헤드리스 모드 on/off")
-    dedupe: bool = Field(True, description="중복 제거 여부")
+    dedupe: bool = Field(False, description="중복 제거 여부")
     diagnostics: bool = Field(False, description="진단 모드(0건 시 스냅샷/HTML 저장)")
     # 분양 관련 필터(선택사항)
     sale_building_types: List[str] = Field(default_factory=list, description="분양 건물유형 필터")

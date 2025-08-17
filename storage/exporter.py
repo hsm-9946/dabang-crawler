@@ -40,7 +40,8 @@ def save_to_excel(items: Iterable[Item], outdir: Path, region: str) -> Path:
 
     - 시트 분리: `property_type` 별로 개별 시트 생성(예: 원룸, 투룸, 오피스텔 등)
     - 각 시트는 5개 핵심 컬럼만 한국어 헤더로 저장
-    - 기존 시트가 있으면 업데이트, 없으면 새로 생성
+    - 기존 시트가 있으면 새 데이터를 추가 (중복 제거 없음)
+    - 항상 새로운 시트에 저장
     """
     outdir.mkdir(parents=True, exist_ok=True)
     data = [asdict(i) for i in items]
@@ -51,49 +52,29 @@ def save_to_excel(items: Iterable[Item], outdir: Path, region: str) -> Path:
         if c not in df.columns:
             df[c] = None
     
-    # 고정 파일명 사용 (종류별로 하나씩만 시트 생성)
-    path = outdir / f"dabang_{region}.xlsx"
-    existing: dict[str, pd.DataFrame] = {}
-    
-    # 기존 파일이 있으면 읽어오기
-    if path.exists():
-        try:
-            existing = pd.read_excel(path, sheet_name=None)  # type: ignore[assignment]
-        except Exception:
-            existing = {}
+    # 타임스탬프를 포함한 고유 파일명 생성 (중복 방지)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    path = outdir / f"dabang_{region}_{timestamp}.xlsx"
     
     with pd.ExcelWriter(path, engine="openpyxl") as w:
-        if df.empty and not existing:
-            # 빈 결과이고 기존 파일도 없으면 기본 시트 생성
+        if df.empty:
+            # 빈 결과면 기본 시트 생성
             pd.DataFrame(columns=[KOREAN_COLS_MAP[c] for c in CORE_COLS]).to_excel(
                 w, sheet_name="원룸", index=False
             )
         else:
-            # 기존 시트들 먼저 기록
-            for sheet_name, e_df in existing.items():
-                e_df.to_excel(w, sheet_name=sheet_name, index=False)
+            # 매물 유형별로 시트 분리하여 저장
+            groups = df.groupby(df["property_type"].fillna("기타"))
             
-            # 새 데이터가 있으면 처리
-            if not df.empty:
-                groups = df.groupby(df["property_type"].fillna("기타"))
+            for ptype, g in groups:
+                name = str(ptype).strip() or "기타"
+                safe_name = (
+                    name.replace("/", "-").replace("\\", "-").replace("*", "｣").replace("[", "(").replace("]", ")")
+                )[:31]
                 
-                for ptype, g in groups:
-                    name = str(ptype).strip() or "기타"
-                    safe_name = (
-                        name.replace("/", "-").replace("\\", "-").replace("*", "｣").replace("[", "(").replace("]", ")")
-                    )[:31]
-                    
-                    new_df = g[CORE_COLS].rename(columns=KOREAN_COLS_MAP)
-                    old_df = existing.get(safe_name)
-                    
-                    if old_df is not None and not old_df.empty:
-                        # 기존 시트가 있으면 병합하고 중복 제거
-                        merged = pd.concat([old_df, new_df], ignore_index=True)
-                        merged = merged.drop_duplicates(subset=list(new_df.columns), keep="first")
-                        merged.to_excel(w, sheet_name=safe_name, index=False)
-                    else:
-                        # 기존 시트가 없으면 새로 생성
-                        new_df.to_excel(w, sheet_name=safe_name, index=False)
+                # 5개 핵심 컬럼만 한국어 헤더로 저장
+                new_df = g[CORE_COLS].rename(columns=KOREAN_COLS_MAP)
+                new_df.to_excel(w, sheet_name=safe_name, index=False)
     
     return path
 

@@ -14,7 +14,7 @@ jobs:
     
     strategy:
       matrix:
-        python-version: [3.10, 3.11]
+        python-version: [3.10, 3.11, 3.12]  # Python 3.12 추가
     
     steps:
     - name: Checkout code
@@ -26,7 +26,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
         
     - name: Cache pip dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4  # v3에서 v4로 업데이트
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
@@ -52,8 +52,8 @@ jobs:
         pyinstaller build_config.spec
         if ($LASTEXITCODE -ne 0) {
           Write-Host "Spec 파일 빌드 실패, 기본 설정으로 재시도..."
-          pyinstaller --onefile --windowed --name "다방크롤러" app/gui.py
-          pyinstaller --onefile --name "다방크롤러_CLI" app/cli_collect.py
+          pyinstaller --onefile --windowed --name "다방크롤러" --icon "assets/icon.ico" app/gui.py
+          pyinstaller --onefile --name "다방크롤러_CLI" --icon "assets/icon.ico" app/cli_collect.py
         }
         
     - name: Create package directory
@@ -63,6 +63,7 @@ jobs:
         mkdir package/data
         mkdir package/logs
         mkdir package/output
+        mkdir package/scraper
         
     - name: Copy files to package
       run: |
@@ -70,6 +71,9 @@ jobs:
         if (Test-Path "dist/다방크롤러_CLI.exe") { Copy-Item "dist/다방크롤러_CLI.exe" "package/" }
         if (Test-Path "config/settings.toml") { Copy-Item "config/settings.toml" "package/config/" }
         if (Test-Path "data/regions_kr.json") { Copy-Item "data/regions_kr.json" "package/data/" }
+        if (Test-Path "scraper/selectors.json") { Copy-Item "scraper/selectors.json" "package/scraper/" }
+        if (Test-Path "scraper/selectors_direct.json") { Copy-Item "scraper/selectors_direct.json" "package/scraper/" }
+        if (Test-Path "scraper/selectors_enhanced.json") { Copy-Item "scraper/selectors_enhanced.json" "package/scraper/" }
         if (Test-Path "README.md") { Copy-Item "README.md" "package/" }
         if (Test-Path "assets/icon.ico") { Copy-Item "assets/icon.ico" "package/" }
         if (Test-Path "LICENSE") { Copy-Item "LICENSE" "package/" }
@@ -77,31 +81,56 @@ jobs:
     - name: Create batch files
       run: |
         echo '@echo off' > package/다방크롤러_실행.bat
-        echo 'echo 다방 부동산 크롤러를 시작합니다...' >> package/다방크롤러_실행.bat
+        echo 'echo ========================================' >> package/다방크롤러_실행.bat
+        echo 'echo    다방 부동산 크롤러 v2.0' >> package/다방크롤러_실행.bat
+        echo 'echo ========================================' >> package/다방크롤러_실행.bat
+        echo 'echo.' >> package/다방크롤러_실행.bat
+        echo 'echo 주요 기능:' >> package/다방크롤러_실행.bat
+        echo 'echo - 다방 부동산 매물 자동 수집' >> package/다방크롤러_실행.bat
+        echo 'echo - Excel 파일로 데이터 저장' >> package/다방크롤러_실행.bat
+        echo 'echo - 개선된 CSS 선택자로 정확한 데이터 파싱' >> package/다방크롤러_실행.bat
+        echo 'echo - 중복 제거 비활성화 (모든 데이터 수집)' >> package/다방크롤러_실행.bat
         echo 'echo.' >> package/다방크롤러_실행.bat
         echo 'echo 1. GUI 모드 (그래픽 인터페이스)' >> package/다방크롤러_실행.bat
         echo 'echo 2. CLI 모드 (명령줄 인터페이스)' >> package/다방크롤러_실행.bat
         echo 'echo 3. 설정 파일 편집' >> package/다방크롤러_실행.bat
         echo 'echo 4. 로그 확인' >> package/다방크롤러_실행.bat
+        echo 'echo 5. 출력 폴더 열기' >> package/다방크롤러_실행.bat
         echo 'echo.' >> package/다방크롤러_실행.bat
-        echo 'set /p choice="선택하세요 (1-4): "' >> package/다방크롤러_실행.bat
+        echo 'set /p choice="선택하세요 (1-5): "' >> package/다방크롤러_실행.bat
         echo 'if "%choice%"=="1" (' >> package/다방크롤러_실행.bat
+        echo '    echo GUI 모드를 시작합니다...' >> package/다방크롤러_실행.bat
         echo '    start "" "다방크롤러.exe"' >> package/다방크롤러_실행.bat
         echo ') else if "%choice%"=="2" (' >> package/다방크롤러_실행.bat
         echo '    echo CLI 모드 사용법:' >> package/다방크롤러_실행.bat
+        echo '    echo.' >> package/다방크롤러_실행.bat
+        echo '    echo 기본 사용법:' >> package/다방크롤러_실행.bat
         echo '    echo 다방크롤러_CLI.exe --region "지역명" --type "매물타입" --limit 개수' >> package/다방크롤러_실행.bat
         echo '    echo.' >> package/다방크롤러_실행.bat
         echo '    echo 예시:' >> package/다방크롤러_실행.bat
         echo '    echo 다방크롤러_CLI.exe --region "서울 강남" --type "원룸" --limit 10' >> package/다방크롤러_실행.bat
+        echo '    echo 다방크롤러_CLI.exe --region "부산 해운대" --type "아파트" --limit 20' >> package/다방크롤러_실행.bat
+        echo '    echo.' >> package/다방크롤러_실행.bat
+        echo '    echo 매물 타입: 원룸, 투룸, 아파트, 주택/빌라, 오피스텔' >> package/다방크롤러_실행.bat
         echo '    echo.' >> package/다방크롤러_실행.bat
         echo '    pause' >> package/다방크롤러_실행.bat
         echo ') else if "%choice%"=="3" (' >> package/다방크롤러_실행.bat
+        echo '    echo 설정 파일을 편집합니다...' >> package/다방크롤러_실행.bat
         echo '    notepad config\settings.toml' >> package/다방크롤러_실행.bat
         echo ') else if "%choice%"=="4" (' >> package/다방크롤러_실행.bat
+        echo '    echo 로그 폴더를 엽니다...' >> package/다방크롤러_실행.bat
         echo '    if exist "logs\*.log" (' >> package/다방크롤러_실행.bat
         echo '        start "" logs' >> package/다방크롤러_실행.bat
         echo '    ) else (' >> package/다방크롤러_실행.bat
         echo '        echo 로그 파일이 없습니다.' >> package/다방크롤러_실행.bat
+        echo '        pause' >> package/다방크롤러_실행.bat
+        echo '    )' >> package/다방크롤러_실행.bat
+        echo ') else if "%choice%"=="5" (' >> package/다방크롤러_실행.bat
+        echo '    echo 출력 폴더를 엽니다...' >> package/다방크롤러_실행.bat
+        echo '    if exist "output\*.xlsx" (' >> package/다방크롤러_실행.bat
+        echo '        start "" output' >> package/다방크롤러_실행.bat
+        echo '    ) else (' >> package/다방크롤러_실행.bat
+        echo '        echo 출력 파일이 없습니다.' >> package/다방크롤러_실행.bat
         echo '        pause' >> package/다방크롤러_실행.bat
         echo '    )' >> package/다방크롤러_실행.bat
         echo ') else (' >> package/다방크롤러_실행.bat
@@ -111,42 +140,67 @@ jobs:
         
     - name: Create README for package
       run: |
-        echo "# 다방 부동산 크롤러 Windows 패키지" > package/README_Windows.txt
+        echo "# 다방 부동산 크롤러 Windows 패키지 v2.0" > package/README_Windows.txt
         echo "" >> package/README_Windows.txt
-        echo "## 설치 및 실행" >> package/README_Windows.txt
+        echo "## 🚀 새로운 기능" >> package/README_Windows.txt
+        echo "" >> package/README_Windows.txt
+        echo "- ✅ 개선된 CSS 선택자로 더 정확한 데이터 파싱" >> package/README_Windows.txt
+        echo "- ✅ 중복 제거 비활성화 (모든 데이터 수집)" >> package/README_Windows.txt
+        echo "- ✅ TypeScript 파일 참고로 최적화된 선택자" >> package/README_Windows.txt
+        echo "- ✅ 상세 페이지 기반 정확한 정보 추출" >> package/README_Windows.txt
+        echo "- ✅ 주소, 부동산, 관리비, 등록일 필드 개선" >> package/README_Windows.txt
+        echo "" >> package/README_Windows.txt
+        echo "## 📦 설치 및 실행" >> package/README_Windows.txt
         echo "" >> package/README_Windows.txt
         echo "1. 다운로드한 폴더를 원하는 위치에 압축 해제" >> package/README_Windows.txt
         echo "2. `다방크롤러_실행.bat` 파일을 더블클릭하여 실행" >> package/README_Windows.txt
         echo "3. GUI 모드 또는 CLI 모드 선택" >> package/README_Windows.txt
         echo "" >> package/README_Windows.txt
-        echo "## GUI 모드" >> package/README_Windows.txt
+        echo "## 🖥️ GUI 모드" >> package/README_Windows.txt
         echo "- 그래픽 인터페이스를 통한 쉬운 사용" >> package/README_Windows.txt
         echo "- 지역, 매물 타입, 수량 등을 마우스로 설정" >> package/README_Windows.txt
         echo "- 실시간 진행 상황 확인" >> package/README_Windows.txt
+        echo "- 개선된 데이터 파싱으로 더 정확한 정보 수집" >> package/README_Windows.txt
         echo "" >> package/README_Windows.txt
-        echo "## CLI 모드" >> package/README_Windows.txt
+        echo "## 💻 CLI 모드" >> package/README_Windows.txt
         echo "- 명령줄을 통한 고급 사용" >> package/README_Windows.txt
         echo "- 자동화 및 배치 처리에 적합" >> package/README_Windows.txt
         echo "- 사용법: `다방크롤러_CLI.exe --region \"지역명\" --type \"매물타입\" --limit 개수`" >> package/README_Windows.txt
         echo "" >> package/README_Windows.txt
-        echo "## 설정 파일" >> package/README_Windows.txt
+        echo "## 📋 지원하는 매물 타입" >> package/README_Windows.txt
+        echo "- 원룸" >> package/README_Windows.txt
+        echo "- 투룸" >> package/README_Windows.txt
+        echo "- 아파트" >> package/README_Windows.txt
+        echo "- 주택/빌라" >> package/README_Windows.txt
+        echo "- 오피스텔" >> package/README_Windows.txt
+        echo "" >> package/README_Windows.txt
+        echo "## ⚙️ 설정 파일" >> package/README_Windows.txt
         echo "- `config/settings.toml`: 기본 설정 파일" >> package/README_Windows.txt
         echo "- 필요에 따라 수정 가능" >> package/README_Windows.txt
         echo "" >> package/README_Windows.txt
-        echo "## 출력 파일" >> package/README_Windows.txt
+        echo "## 📊 출력 파일" >> package/README_Windows.txt
         echo "- `output/`: 수집된 데이터가 Excel 파일로 저장됨" >> package/README_Windows.txt
         echo "- `logs/`: 실행 로그 파일" >> package/README_Windows.txt
+        echo "- 파일명 형식: `dabang_지역명_YYYYMMDD_HHMMSS.xlsx`" >> package/README_Windows.txt
         echo "" >> package/README_Windows.txt
-        echo "## 시스템 요구사항" >> package/README_Windows.txt
+        echo "## 🔧 시스템 요구사항" >> package/README_Windows.txt
         echo "- Windows 10/11 (64비트)" >> package/README_Windows.txt
         echo "- 인터넷 연결 필요" >> package/README_Windows.txt
         echo "- 최소 4GB RAM 권장" >> package/README_Windows.txt
+        echo "- Python 3.10+ (자동 설치됨)" >> package/README_Windows.txt
         echo "" >> package/README_Windows.txt
-        echo "## 문제 해결" >> package/README_Windows.txt
+        echo "## 🐛 문제 해결" >> package/README_Windows.txt
         echo "- 실행이 안 되는 경우: Windows Defender 또는 바이러스 백신에서 예외 처리" >> package/README_Windows.txt
         echo "- 데이터 수집이 안 되는 경우: 인터넷 연결 확인 및 다방 웹사이트 접속 테스트" >> package/README_Windows.txt
+        echo "- 파싱 오류가 있는 경우: 로그 파일 확인 후 재시도" >> package/README_Windows.txt
         echo "" >> package/README_Windows.txt
-        echo "## 라이선스" >> package/README_Windows.txt
+        echo "## 📝 변경사항" >> package/README_Windows.txt
+        echo "- v2.0: TypeScript 파일 참고로 CSS 선택자 개선" >> package/README_Windows.txt
+        echo "- v2.0: 상세 페이지 기반 정확한 정보 추출" >> package/README_Windows.txt
+        echo "- v2.0: 중복 제거 비활성화로 모든 데이터 수집" >> package/README_Windows.txt
+        echo "- v2.0: 주소, 부동산, 관리비, 등록일 필드 파싱 개선" >> package/README_Windows.txt
+        echo "" >> package/README_Windows.txt
+        echo "## 📄 라이선스" >> package/README_Windows.txt
         echo "이 소프트웨어는 교육 및 개인 사용 목적으로만 사용하세요." >> package/README_Windows.txt
         echo "상업적 사용 시 다방의 이용약관을 확인하세요." >> package/README_Windows.txt
         
@@ -162,7 +216,7 @@ jobs:
         Compress-Archive -Path "package/*" -DestinationPath $zipName
         
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4  # v3에서 v4로 업데이트
       with:
         name: 다방크롤러-Windows-${{ matrix.python-version }}
         path: |
@@ -178,6 +232,6 @@ jobs:
       with:
         tag_name: ${{ github.ref }}
         release_name: 다방크롤러 Windows v${{ github.ref_name }}
-        body: "## Windows 실행 파일 릴리즈\n\n### 다운로드\n- GUI 모드: `다방크롤러.exe`\n- CLI 모드: `다방크롤러_CLI.exe`\n\n### 주요 기능\n- 다방 부동산 매물 자동 수집\n- Excel 파일로 데이터 저장\n- GUI 및 CLI 모드 지원\n- 지역별, 매물 타입별 필터링\n\n### 설치 방법\n1. ZIP 파일 다운로드 및 압축 해제\n2. `다방크롤러_실행.bat` 실행\n3. GUI 또는 CLI 모드 선택\n\n### 시스템 요구사항\n- Windows 10/11 (64비트)\n- 인터넷 연결\n- 최소 4GB RAM"
+        body: "## 🚀 다방크롤러 Windows v${{ github.ref_name }} 릴리즈\n\n### 📦 다운로드\n- GUI 모드: `다방크롤러.exe`\n- CLI 모드: `다방크롤러_CLI.exe`\n\n### ✨ 주요 기능\n- 다방 부동산 매물 자동 수집\n- Excel 파일로 데이터 저장\n- GUI 및 CLI 모드 지원\n- 지역별, 매물 타입별 필터링\n- **개선된 CSS 선택자로 정확한 데이터 파싱**\n- **중복 제거 비활성화 (모든 데이터 수집)**\n- **TypeScript 파일 참고로 최적화된 선택자**\n\n### 🔧 설치 방법\n1. ZIP 파일 다운로드 및 압축 해제\n2. `다방크롤러_실행.bat` 실행\n3. GUI 또는 CLI 모드 선택\n\n### 📋 지원하는 매물 타입\n- 원룸, 투룸, 아파트, 주택/빌라, 오피스텔\n\n### 💻 CLI 사용법\n```bash\n다방크롤러_CLI.exe --region \"서울 강남\" --type \"원룸\" --limit 10\n다방크롤러_CLI.exe --region \"부산 해운대\" --type \"아파트\" --limit 20\n```\n\n### 🔧 시스템 요구사항\n- Windows 10/11 (64비트)\n- 인터넷 연결\n- 최소 4GB RAM\n- Python 3.10+ (자동 설치됨)\n\n### 📝 변경사항\n- v2.0: TypeScript 파일 참고로 CSS 선택자 개선\n- v2.0: 상세 페이지 기반 정확한 정보 추출\n- v2.0: 중복 제거 비활성화로 모든 데이터 수집\n- v2.0: 주소, 부동산, 관리비, 등록일 필드 파싱 개선"
         draft: false
         prerelease: false

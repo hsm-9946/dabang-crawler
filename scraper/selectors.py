@@ -183,8 +183,12 @@ CARD_PRICE = [
 CARD_PRICE = [sel for sel in CARD_PRICE if sel]
 
 CARD_REALTOR = [
-    # onetwo 전용 중개사 선택자
-    ":scope >> text=/공인중개|중개사무소/",              # onetwo 카드 내 중개사 텍스트
+    # onetwo 전용 중개사 선택자 - 실제 웹페이지 구조에 맞게 수정
+    ":scope >> text=/공인중개|중개사무소|부동산/",              # onetwo 카드 내 중개사 텍스트
+    # 실제 웹페이지에서 확인된 중개사 정보 위치
+    "div[class*='sc-gVrasc'] h1",  # 중개사무소 정보 패널의 제목
+    "div[class*='ktKEiH'] h1",  # 중개사무소 정보 패널의 제목
+    "h1:has-text(/공인중개|중개사무소|부동산/)",  # 중개사무소 제목
     # 기존 선택자들 (폴백)
     # JSON에서 로드한 선택자 (우선순위 1)
     JSON_SELECTORS.get("list_realtor", ""),
@@ -198,17 +202,25 @@ CARD_REALTOR = [
 CARD_REALTOR = [sel for sel in CARD_REALTOR if sel]
 
 CARD_TIME = [
-    # onetwo 전용 시간 선택자
+    # onetwo 전용 시간 선택자 - 실제 웹페이지 구조에 맞게 수정
     ":scope >> text=/등록일|전|초|분|시간|일|월/",        # onetwo 카드 내 시간 텍스트
+    # 실제 웹페이지에서 확인된 등록일 위치
+    "div:has-text('최초등록일') span",  # 최초등록일 옆의 날짜
+    "div:has-text('최초등록일')",  # 최초등록일 전체 텍스트
+    "text=/최초등록일\s*\d{4}\.\d{2}\.\d{2}/",  # 최초등록일 패턴
     # 기존 선택자들 (폴백)
     "text=/\d+\s*(분|시간|일)\s*전/",
     "text=/어제|오늘/",
 ]
 
-# 관리비 필드 추가
+# 관리비 필드 추가 - 실제 웹페이지 구조에 맞게 수정
 CARD_MAINTENANCE = [
-    # onetwo 전용 관리비 선택자
+    # onetwo 전용 관리비 선택자 - 실제 웹페이지 구조에 맞게 수정
     ":scope >> text=/관리비/",                          # onetwo 카드 내 관리비 텍스트
+    # 실제 웹페이지에서 확인된 관리비 위치
+    "div:has-text('관리비') span",  # 관리비 옆의 값
+    "div:has-text('관리비')",  # 관리비 전체 텍스트
+    "text=/관리비\s*(없음|\d+만?)/",  # 관리비 패턴 (없음 또는 숫자+만)
     # 기존 선택자들 (폴백)
     # JSON에서 로드한 선택자 (우선순위 1)
     JSON_SELECTORS.get("list_maint", ""),
@@ -229,10 +241,13 @@ CARD_LINK = [
     "a[href]",
 ]
 
-# 주소 추출 관련 선택자 (통합)
+# 주소 추출 관련 선택자 (통합) - 실제 웹페이지 구조에 맞게 수정
 CARD_ADDRESS = [
-    # onetwo 전용 주소 선택자
+    # onetwo 전용 주소 선택자 - 실제 웹페이지 구조에 맞게 수정
     ":scope >> text=/[가-힣]+(시|도)\s+[가-힣]+(구|군)\s+[가-힣]+(동|읍|면)/",  # onetwo 카드 내 주소 패턴
+    # 실제 웹페이지에서 확인된 주소 위치
+    "p:has-text(/[가-힣]+(시|도)\s+[가-힣]+(구|군)\s+[가-힣]+(동|읍|면)/)",  # 주소 패턴이 포함된 p 태그
+    "div:has-text(/[가-힣]+(시|도)\s+[가-힣]+(구|군)\s+[가-힣]+(동|읍|면)/)",  # 주소 패턴이 포함된 div 태그
     # 기존 선택자들 (폴백)
     "section[data-scroll-spy-element='near'] p",
     "section.sc-hMraNJ.bclnPG p",          # 오피스텔 위치 섹션 p(스샷)

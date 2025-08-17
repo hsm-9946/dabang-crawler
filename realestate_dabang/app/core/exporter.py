@@ -58,8 +58,8 @@ def build_output_path(region_keyword: str) -> Path:
 
 
 def save_excel(records: List[Record], region_keyword: str, dedupe: bool = True) -> Path:
-    if dedupe:
-        records = deduplicate_records(records)
+    # 중복 제거 비활성화 - 모든 레코드를 그대로 사용
+    logger.info("중복 제거 비활성화: {}건 모두 유지", len(records))
     df = records_to_dataframe(records)
     output_path = build_output_path(region_keyword)
     output_path.parent.mkdir(parents=True, exist_ok=True)

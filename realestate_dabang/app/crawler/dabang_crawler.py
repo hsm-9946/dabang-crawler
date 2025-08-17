@@ -420,6 +420,16 @@ class DabangCrawler:
                 rec = self._parse_card(driver, card)
                 if rec:
                     records.append(rec)
+                    # 상세한 아이템 정보 로그 출력
+                    maintenance_info = f"관리비: {rec.maintenance_fee:,}원" if rec.maintenance_fee else "관리비: 없음"
+                    self._emit(f"아이템 {len(records)} 수집 완료:")
+                    self._emit(f"  📍 주소: {rec.lot_address}")
+                    self._emit(f"  💰 가격: {rec.price:,}원")
+                    self._emit(f"  🏠 매물유형: {rec.property_type}")
+                    self._emit(f"  💸 {maintenance_info}")
+                    self._emit(f"  🔗 URL: {rec.url}")
+                    self._emit(f"  📅 수집시간: {rec.collected_at}")
+                    self._emit("  " + "─" * 50)
                 if idx % 20 == 0:
                     self._emit(f"파싱 진행: {idx}/{len(cards)}")
                 random_sleep()
@@ -441,6 +451,16 @@ class DabangCrawler:
                         rec2 = self._parse_card(driver2, card)
                         if rec2:
                             records.append(rec2)
+                            # 상세한 아이템 정보 로그 출력 (비헤드리스 재시도)
+                            maintenance_info = f"관리비: {rec2.maintenance_fee:,}원" if rec2.maintenance_fee else "관리비: 없음"
+                            self._emit(f"아이템 {len(records)} 수집 완료 (비헤드리스):")
+                            self._emit(f"  📍 주소: {rec2.lot_address}")
+                            self._emit(f"  💰 가격: {rec2.price:,}원")
+                            self._emit(f"  🏠 매물유형: {rec2.property_type}")
+                            self._emit(f"  💸 {maintenance_info}")
+                            self._emit(f"  🔗 URL: {rec2.url}")
+                            self._emit(f"  📅 수집시간: {rec2.collected_at}")
+                            self._emit("  " + "─" * 50)
                         if idx % 20 == 0:
                             self._emit(f"비헤드리스 파싱 진행: {idx}/{len(cards2)}")
                         random_sleep()

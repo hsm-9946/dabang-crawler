@@ -71,7 +71,7 @@ class App(ctk.CTk):
                 pass
 
         self.headless_var = ctk.BooleanVar(value=True)
-        self.dedupe_var = ctk.BooleanVar(value=True)
+        self.dedupe_var = ctk.BooleanVar(value=False)
         self.diagnostics_var = ctk.BooleanVar(value=False)
 
         # 분양 관련 필터(선택)

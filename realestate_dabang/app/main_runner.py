@@ -19,7 +19,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--price-max", type=int, default=None, help="최대 가격(원)")
     p.add_argument("--types", action="append", default=[], help="유형(복수 지정 가능)")
     p.add_argument("--headless", type=lambda s: s.lower() in {"1", "true", "yes"}, default=True)
-    p.add_argument("--dedupe", type=lambda s: s.lower() in {"1", "true", "yes"}, default=True)
+    p.add_argument("--dedupe", type=lambda s: s.lower() in {"1", "true", "yes"}, default=False)
     p.add_argument("--diagnostics", type=lambda s: s.lower() in {"1", "true", "yes"}, default=False)
     p.add_argument("--output-dir", type=str, default=None, help="Excel 저장 경로 재정의")
     # 분양 관련
