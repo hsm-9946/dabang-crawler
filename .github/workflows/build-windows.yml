@@ -74,44 +74,38 @@ jobs:
         
     - name: Create batch files
       run: |
-        @"
-@echo off
-echo 다방 부동산 크롤러를 시작합니다...
-echo.
-echo 1. GUI 모드 (그래픽 인터페이스)
-echo 2. CLI 모드 (명령줄 인터페이스)
-echo.
-set /p choice="선택하세요 (1 또는 2): "
-if "%choice%"=="1" (
-    start "" "다방크롤러.exe"
-) else if "%choice%"=="2" (
-    echo CLI 모드 사용법:
-    echo 다방크롤러_CLI.exe --region "지역명" --type "매물타입" --limit 개수
-    echo.
-    echo 예시:
-    echo 다방크롤러_CLI.exe --region "서울 강남" --type "원룸" --limit 10
-    echo.
-    pause
-) else (
-    echo 잘못된 선택입니다.
-    pause
-)
-"@ > package/다방크롤러_실행.bat
-        
-        @"
-@echo off
-echo 다방 부동산 크롤러 CLI 모드
-echo.
-echo 사용법: 다방크롤러_CLI.exe --region "지역명" --type "매물타입" --limit 개수
-echo.
-echo 매물 타입: 원룸, 투룸, 오피스텔, 아파트, 빌라
-echo.
-echo 예시:
-echo 다방크롤러_CLI.exe --region "서울 강남" --type "원룸" --limit 10
-echo 다방크롤러_CLI.exe --region "부산 기장" --type "오피스텔" --limit 20
-echo.
-pause
-"@ > package/CLI_사용법.txt
+        echo '@echo off' > package/다방크롤러_실행.bat
+        echo 'echo 다방 부동산 크롤러를 시작합니다...' >> package/다방크롤러_실행.bat
+        echo 'echo.' >> package/다방크롤러_실행.bat
+        echo 'echo 1. GUI 모드 (그래픽 인터페이스)' >> package/다방크롤러_실행.bat
+        echo 'echo 2. CLI 모드 (명령줄 인터페이스)' >> package/다방크롤러_실행.bat
+        echo 'echo 3. 설정 파일 편집' >> package/다방크롤러_실행.bat
+        echo 'echo 4. 로그 확인' >> package/다방크롤러_실행.bat
+        echo 'echo.' >> package/다방크롤러_실행.bat
+        echo 'set /p choice="선택하세요 (1-4): "' >> package/다방크롤러_실행.bat
+        echo 'if "%choice%"=="1" (' >> package/다방크롤러_실행.bat
+        echo '    start "" "다방크롤러.exe"' >> package/다방크롤러_실행.bat
+        echo ') else if "%choice%"=="2" (' >> package/다방크롤러_실행.bat
+        echo '    echo CLI 모드 사용법:' >> package/다방크롤러_실행.bat
+        echo '    echo 다방크롤러_CLI.exe --region "지역명" --type "매물타입" --limit 개수' >> package/다방크롤러_실행.bat
+        echo '    echo.' >> package/다방크롤러_실행.bat
+        echo '    echo 예시:' >> package/다방크롤러_실행.bat
+        echo '    echo 다방크롤러_CLI.exe --region "서울 강남" --type "원룸" --limit 10' >> package/다방크롤러_실행.bat
+        echo '    echo.' >> package/다방크롤러_실행.bat
+        echo '    pause' >> package/다방크롤러_실행.bat
+        echo ') else if "%choice%"=="3" (' >> package/다방크롤러_실행.bat
+        echo '    notepad config\settings.toml' >> package/다방크롤러_실행.bat
+        echo ') else if "%choice%"=="4" (' >> package/다방크롤러_실행.bat
+        echo '    if exist "logs\*.log" (' >> package/다방크롤러_실행.bat
+        echo '        start "" logs' >> package/다방크롤러_실행.bat
+        echo '    ) else (' >> package/다방크롤러_실행.bat
+        echo '        echo 로그 파일이 없습니다.' >> package/다방크롤러_실행.bat
+        echo '        pause' >> package/다방크롤러_실행.bat
+        echo '    )' >> package/다방크롤러_실행.bat
+        echo ') else (' >> package/다방크롤러_실행.bat
+        echo '    echo 잘못된 선택입니다.' >> package/다방크롤러_실행.bat
+        echo '    pause' >> package/다방크롤러_실행.bat
+        echo ')' >> package/다방크롤러_실행.bat
         
     - name: Create README for package
       run: |
