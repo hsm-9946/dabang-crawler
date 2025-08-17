@@ -1,0 +1,15 @@
+{
+  "list_scroll_container": "#onetwo-list",
+  "list_root": "#onetwo-list [role='list']",
+  "card_root": "[role='listitem']",
+  "card_link": "a[href^='/room/']",
+  "list_address": "p.lpbZMp",
+  "list_price": "div",
+  "list_maint": "p.hxyaWy",
+  "list_realtor": "p.gjeXtl",
+  "list_posted": "text=/\\d+\\s*(분|시간|일)\\s*전/",
+  "detail_address": "span",
+  "detail_maint": "span",
+  "detail_realtor": "p.jkfKXS",
+  "detail_posted": "text=/\\d{4}[./-]\\d{1,2}[./-]\\d{1,2}/"
+}

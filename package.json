@@ -1,0 +1,22 @@
+{
+  "name": "dabang-scraper",
+  "version": "1.0.0",
+  "description": "다방 부동산 매물 수집기",
+  "main": "scripts/dabang_scrape.ts",
+  "scripts": {
+    "scrape": "tsx scripts/dabang_scrape.ts",
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": ["scraper", "realestate", "dabang"],
+  "author": "",
+  "license": "MIT"
+}

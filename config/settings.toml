@@ -1,0 +1,16 @@
+[defaults]
+region = "부산 기장"
+property_type = "원룸"
+price_min = 0
+price_max = 2000000
+max_items = 50
+max_pages = 5
+
+[browser]
+headless = true
+
+[paths]
+output = "output"
+logs = "logs"
+
+

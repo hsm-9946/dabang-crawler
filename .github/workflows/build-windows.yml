@@ -1,0 +1,209 @@
+name: Build Windows Executable
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    strategy:
+      matrix:
+        python-version: [3.10, 3.11]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+        pip install auto-py-to-exe
+        playwright install chromium
+        
+    - name: Create build directory
+      run: |
+        mkdir build
+        mkdir dist
+        
+    - name: Build executables using spec file
+      run: |
+        pyinstaller build_config.spec
+        if ($LASTEXITCODE -ne 0) {
+          Write-Host "Spec 파일 빌드 실패, 기본 설정으로 재시도..."
+          pyinstaller --onefile --windowed --name "다방크롤러" app/gui.py
+          pyinstaller --onefile --name "다방크롤러_CLI" app/cli_collect.py
+        }
+        
+    - name: Create package directory
+      run: |
+        mkdir package
+        mkdir package/config
+        mkdir package/data
+        mkdir package/logs
+        mkdir package/output
+        
+    - name: Copy files to package
+      run: |
+        Copy-Item "dist/다방크롤러.exe" "package/"
+        Copy-Item "dist/다방크롤러_CLI.exe" "package/"
+        Copy-Item "config/settings.toml" "package/config/"
+        Copy-Item "data/regions_kr.json" "package/data/"
+        Copy-Item "README.md" "package/"
+        
+    - name: Create batch files
+      run: |
+        @"
+@echo off
+echo 다방 부동산 크롤러를 시작합니다...
+echo.
+echo 1. GUI 모드 (그래픽 인터페이스)
+echo 2. CLI 모드 (명령줄 인터페이스)
+echo.
+set /p choice="선택하세요 (1 또는 2): "
+if "%choice%"=="1" (
+    start "" "다방크롤러.exe"
+) else if "%choice%"=="2" (
+    echo CLI 모드 사용법:
+    echo 다방크롤러_CLI.exe --region "지역명" --type "매물타입" --limit 개수
+    echo.
+    echo 예시:
+    echo 다방크롤러_CLI.exe --region "서울 강남" --type "원룸" --limit 10
+    echo.
+    pause
+) else (
+    echo 잘못된 선택입니다.
+    pause
+)
+"@ > package/다방크롤러_실행.bat
+        
+        @"
+@echo off
+echo 다방 부동산 크롤러 CLI 모드
+echo.
+echo 사용법: 다방크롤러_CLI.exe --region "지역명" --type "매물타입" --limit 개수
+echo.
+echo 매물 타입: 원룸, 투룸, 오피스텔, 아파트, 빌라
+echo.
+echo 예시:
+echo 다방크롤러_CLI.exe --region "서울 강남" --type "원룸" --limit 10
+echo 다방크롤러_CLI.exe --region "부산 기장" --type "오피스텔" --limit 20
+echo.
+pause
+"@ > package/CLI_사용법.txt
+        
+    - name: Create README for package
+      run: |
+        @"
+# 다방 부동산 크롤러 Windows 패키지
+
+## 설치 및 실행
+
+1. 다운로드한 폴더를 원하는 위치에 압축 해제
+2. `다방크롤러_실행.bat` 파일을 더블클릭하여 실행
+3. GUI 모드 또는 CLI 모드 선택
+
+## GUI 모드
+- 그래픽 인터페이스를 통한 쉬운 사용
+- 지역, 매물 타입, 수량 등을 마우스로 설정
+- 실시간 진행 상황 확인
+
+## CLI 모드
+- 명령줄을 통한 고급 사용
+- 자동화 및 배치 처리에 적합
+- 사용법: `다방크롤러_CLI.exe --region "지역명" --type "매물타입" --limit 개수`
+
+## 설정 파일
+- `config/settings.toml`: 기본 설정 파일
+- 필요에 따라 수정 가능
+
+## 출력 파일
+- `output/`: 수집된 데이터가 Excel 파일로 저장됨
+- `logs/`: 실행 로그 파일
+
+## 시스템 요구사항
+- Windows 10/11 (64비트)
+- 인터넷 연결 필요
+- 최소 4GB RAM 권장
+
+## 문제 해결
+- 실행이 안 되는 경우: Windows Defender 또는 바이러스 백신에서 예외 처리
+- 데이터 수집이 안 되는 경우: 인터넷 연결 확인 및 다방 웹사이트 접속 테스트
+
+## 라이선스
+이 소프트웨어는 교육 및 개인 사용 목적으로만 사용하세요.
+상업적 사용 시 다방의 이용약관을 확인하세요.
+"@ > package/README_Windows.txt
+        
+    - name: Create ZIP package
+      run: |
+        $version = $env:GITHUB_REF_NAME
+        if ($version -like "refs/tags/v*") {
+          $version = $version.Replace("refs/tags/v", "")
+        } else {
+          $version = "dev"
+        }
+        $zipName = "다방크롤러_Windows_v$version.zip"
+        Compress-Archive -Path "package/*" -DestinationPath $zipName
+        
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: 다방크롤러-Windows-${{ matrix.python-version }}
+        path: |
+          *.zip
+          dist/*.exe
+        retention-days: 30
+        
+    - name: Create release (on tag)
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: 다방크롤러 Windows v${{ github.ref_name }}
+        body: |
+          ## Windows 실행 파일 릴리즈
+          
+          ### 다운로드
+          - GUI 모드: `다방크롤러.exe`
+          - CLI 모드: `다방크롤러_CLI.exe`
+          
+          ### 주요 기능
+          - 다방 부동산 매물 자동 수집
+          - Excel 파일로 데이터 저장
+          - GUI 및 CLI 모드 지원
+          - 지역별, 매물 타입별 필터링
+          
+          ### 설치 방법
+          1. ZIP 파일 다운로드 및 압축 해제
+          2. `다방크롤러_실행.bat` 실행
+          3. GUI 또는 CLI 모드 선택
+          
+          ### 시스템 요구사항
+          - Windows 10/11 (64비트)
+          - 인터넷 연결
+          - 최소 4GB RAM
+        draft: false
+        prerelease: false
