@@ -318,8 +318,8 @@ jobs:
         echo "이 소프트웨어는 교육 및 개인 사용 목적으로만 사용하세요." >> package/README_Windows.txt
         echo "상업적 사용 시 다방의 이용약관을 확인하세요." >> package/README_Windows.txt
         
-                    - name: Create ZIP package
-                  run: |
+    - name: Create ZIP package
+      run: |
                     $version = $env:GITHUB_REF_NAME
                     if ($version -like "refs/tags/v*") {
                       $version = $version.Replace("refs/tags/v", "")
