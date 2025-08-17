@@ -85,8 +85,12 @@ def fill_first_sync(page: SyncPage, selectors: Iterable[str], text: str) -> None
 
 def text_first_sync(page: SyncPage, selectors: Iterable[str]) -> str:
     """첫 번째로 매칭되는 요소의 텍스트를 반환합니다."""
-    loc = first_locator_sync(page, selectors)
-    return (loc.first.text_content() or "").strip()
+    try:
+        loc = first_locator_sync(page, selectors)
+        return (loc.first.text_content(timeout=5000) or "").strip()  # 타임아웃 단축
+    except Exception as e:
+        # 타임아웃이나 다른 오류 발생 시 빈 문자열 반환
+        return ""
 
 def first_locator_from_element_sync(element: SyncLocator, selectors: Iterable[str]) -> SyncLocator:
     """
@@ -105,5 +109,9 @@ def first_locator_from_element_sync(element: SyncLocator, selectors: Iterable[st
 
 def text_first_from_element_sync(element: SyncLocator, selectors: Iterable[str]) -> str:
     """요소 내에서 첫 번째로 매칭되는 요소의 텍스트를 반환합니다."""
-    loc = first_locator_from_element_sync(element, selectors)
-    return (loc.first.text_content() or "").strip()
+    try:
+        loc = first_locator_from_element_sync(element, selectors)
+        return (loc.first.text_content(timeout=5000) or "").strip()  # 타임아웃 단축
+    except Exception as e:
+        # 타임아웃이나 다른 오류 발생 시 빈 문자열 반환
+        return ""

@@ -564,13 +564,38 @@ class DabangScraper:
                     if pid in seen_ids:
                         continue
 
-                    price = text_first_from_element_sync(card, CARD_PRICE) or ""
-                    details = text_first_from_element_sync(card, CARD_ADDRESS_HINT) or ""
-                    address = (text_first_from_element_sync(card, CARD_ADDRESS)
-                               or self._extract_address_from_text(details) or "")
-                    realtor = text_first_from_element_sync(card, CARD_REALTOR) or ""
-                    maintenance = text_first_from_element_sync(card, CARD_MAINTENANCE)
-                    posted_date = text_first_from_element_sync(card, CARD_TIME)
+                    # 타임아웃 방지를 위해 개별적으로 처리
+                    try:
+                        price = text_first_from_element_sync(card, CARD_PRICE) or ""
+                    except Exception:
+                        price = ""
+                    
+                    try:
+                        details = text_first_from_element_sync(card, CARD_ADDRESS_HINT) or ""
+                    except Exception:
+                        details = ""
+                    
+                    try:
+                        address = text_first_from_element_sync(card, CARD_ADDRESS) or ""
+                        if not address:
+                            address = self._extract_address_from_text(details) or ""
+                    except Exception:
+                        address = ""
+                    
+                    try:
+                        realtor = text_first_from_element_sync(card, CARD_REALTOR) or ""
+                    except Exception:
+                        realtor = ""
+                    
+                    try:
+                        maintenance = text_first_from_element_sync(card, CARD_MAINTENANCE)
+                    except Exception:
+                        maintenance = ""
+                    
+                    try:
+                        posted_date = text_first_from_element_sync(card, CARD_TIME)
+                    except Exception:
+                        posted_date = ""
 
                     item = Item(
                         address=address,
@@ -1057,17 +1082,21 @@ class DabangScraper:
     def _extract_address(self, page: Page, card_element=None) -> str:
         """매물의 실제 주소를 추출합니다."""
         try:
-            # 1. 먼저 카드 내에서 주소 정보 찾기
+            # 1. 먼저 카드 내에서 주소 정보 찾기 (타임아웃 단축)
             if card_element:
                 for sel in getattr(S, 'CARD_ADDRESS', []):
                     try:
                         address_elements = card_element.locator(sel)
                         if address_elements.count() > 0:
-                            for i in range(address_elements.count()):
-                                text = address_elements.nth(i).inner_text(timeout=1000).strip()
-                                if self._is_valid_address(text):
-                                    self._log(f"카드에서 주소 발견: {text}")
-                                    return text
+                            for i in range(min(address_elements.count(), 3)):  # 최대 3개만 시도
+                                try:
+                                    text = address_elements.nth(i).inner_text(timeout=3000).strip()  # 타임아웃 단축
+                                    if self._is_valid_address(text):
+                                        self._log(f"카드에서 주소 발견: {text}")
+                                        return text
+                                except Exception as e:
+                                    self._log(f"주소 요소 {i} 추출 실패: {e}")
+                                    continue
                     except Exception as e:
                         self._log(f"카드 주소 추출 실패 {sel}: {e}")
                         continue
