@@ -86,8 +86,8 @@ jobs:
         if (Test-Path "assets/icon.ico") { Copy-Item "assets/icon.ico" "package/" }
         if (Test-Path "LICENSE") { Copy-Item "LICENSE" "package/" }
         
-                    - name: Create batch files
-                  run: |
+    - name: Create batch files
+      run: |
                     echo '@echo off' > package/다방크롤러_실행.bat
                     echo 'chcp 65001 >nul' >> package/다방크롤러_실행.bat
                     echo 'echo ========================================' >> package/다방크롤러_실행.bat
