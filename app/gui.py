@@ -9,7 +9,14 @@ from loguru import logger
 import subprocess
 import json
 import sys
+import os
 from pathlib import Path as _P
+
+# GUI 모드에서 터미널 창 숨기기
+if getattr(sys, 'frozen', False):
+    # PyInstaller로 빌드된 경우
+    import ctypes
+    ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
 
 # Ensure project root in path for direct execution
 ROOT = _P(__file__).resolve().parents[1]
