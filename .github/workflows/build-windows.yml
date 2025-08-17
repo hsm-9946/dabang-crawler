@@ -86,66 +86,77 @@ jobs:
         if (Test-Path "assets/icon.ico") { Copy-Item "assets/icon.ico" "package/" }
         if (Test-Path "LICENSE") { Copy-Item "LICENSE" "package/" }
         
-    - name: Create batch files
-      run: |
-        echo '@echo off' > package/다방크롤러_실행.bat
-        echo 'chcp 65001 >nul' >> package/다방크롤러_실행.bat
-        echo 'echo ========================================' >> package/다방크롤러_실행.bat
-        echo 'echo    Dabang Real Estate Crawler v2.0' >> package/다방크롤러_실행.bat
-        echo 'echo ========================================' >> package/다방크롤러_실행.bat
-        echo 'echo.' >> package/다방크롤러_실행.bat
-        echo 'echo Main Features:' >> package/다방크롤러_실행.bat
-        echo 'echo - Automatic property data collection from Dabang' >> package/다방크롤러_실행.bat
-        echo 'echo - Excel file export' >> package/다방크롤러_실행.bat
-        echo 'echo - Improved CSS selectors for accurate data parsing' >> package/다방크롤러_실행.bat
-        echo 'echo - Disabled duplicate removal (collect all data)' >> package/다방크롤러_실행.bat
-        echo 'echo.' >> package/다방크롤러_실행.bat
-        echo 'echo 1. GUI Mode (Graphical Interface)' >> package/다방크롤러_실행.bat
-        echo 'echo 2. CLI Mode (Command Line Interface)' >> package/다방크롤러_실행.bat
-        echo 'echo 3. Edit Settings File' >> package/다방크롤러_실행.bat
-        echo 'echo 4. View Logs' >> package/다방크롤러_실행.bat
-        echo 'echo 5. Open Output Folder' >> package/다방크롤러_실행.bat
-        echo 'echo.' >> package/다방크롤러_실행.bat
-        echo 'set /p choice="Select option (1-5): "' >> package/다방크롤러_실행.bat
-        echo 'if "%choice%"=="1" (' >> package/다방크롤러_실행.bat
-        echo '    echo Starting GUI mode...' >> package/다방크롤러_실행.bat
-        echo '    start "" "다방크롤러.exe"' >> package/다방크롤러_실행.bat
-        echo ') else if "%choice%"=="2" (' >> package/다방크롤러_실행.bat
-        echo '    echo CLI Mode Usage:' >> package/다방크롤러_실행.bat
-        echo '    echo.' >> package/다방크롤러_실행.bat
-        echo '    echo Basic Usage:' >> package/다방크롤러_실행.bat
-        echo '    echo 다방크롤러_CLI.exe --region "region_name" --type "property_type" --limit count' >> package/다방크롤러_실행.bat
-        echo '    echo.' >> package/다방크롤러_실행.bat
-        echo '    echo Examples:' >> package/다방크롤러_실행.bat
-        echo '    echo 다방크롤러_CLI.exe --region "Seoul Gangnam" --type "원룸" --limit 10' >> package/다방크롤러_실행.bat
-        echo '    echo 다방크롤러_CLI.exe --region "Busan Haeundae" --type "아파트" --limit 20' >> package/다방크롤러_실행.bat
-        echo '    echo.' >> package/다방크롤러_실행.bat
-        echo '    echo Property Types: 원룸, 투룸, 아파트, 주택/빌라, 오피스텔' >> package/다방크롤러_실행.bat
-        echo '    echo.' >> package/다방크롤러_실행.bat
-        echo '    pause' >> package/다방크롤러_실행.bat
-        echo ') else if "%choice%"=="3" (' >> package/다방크롤러_실행.bat
-        echo '    echo Opening settings file...' >> package/다방크롤러_실행.bat
-        echo '    notepad config\settings.toml' >> package/다방크롤러_실행.bat
-        echo ') else if "%choice%"=="4" (' >> package/다방크롤러_실행.bat
-        echo '    echo Opening logs folder...' >> package/다방크롤러_실행.bat
-        echo '    if exist "logs\*.log" (' >> package/다방크롤러_실행.bat
-        echo '        start "" logs' >> package/다방크롤러_실행.bat
-        echo '    ) else (' >> package/다방크롤러_실행.bat
-        echo '        echo No log files found.' >> package/다방크롤러_실행.bat
-        echo '        pause' >> package/다방크롤러_실행.bat
-        echo '    )' >> package/다방크롤러_실행.bat
-        echo ') else if "%choice%"=="5" (' >> package/다방크롤러_실행.bat
-        echo '    echo Opening output folder...' >> package/다방크롤러_실행.bat
-        echo '    if exist "output\*.xlsx" (' >> package/다방크롤러_실행.bat
-        echo '        start "" output' >> package/다방크롤러_실행.bat
-        echo '    ) else (' >> package/다방크롤러_실행.bat
-        echo '        echo No output files found.' >> package/다방크롤러_실행.bat
-        echo '        pause' >> package/다방크롤러_실행.bat
-        echo '    )' >> package/다방크롤러_실행.bat
-        echo ') else (' >> package/다방크롤러_실행.bat
-        echo '    echo Invalid selection.' >> package/다방크롤러_실행.bat
-        echo '    pause' >> package/다방크롤러_실행.bat
-        echo ')' >> package/다방크롤러_실행.bat
+                    - name: Create batch files
+                  run: |
+                    echo '@echo off' > package/다방크롤러_실행.bat
+                    echo 'chcp 65001 >nul' >> package/다방크롤러_실행.bat
+                    echo 'echo ========================================' >> package/다방크롤러_실행.bat
+                    echo 'echo    Dabang Real Estate Crawler v2.0' >> package/다방크롤러_실행.bat
+                    echo 'echo ========================================' >> package/다방크롤러_실행.bat
+                    echo 'echo.' >> package/다방크롤러_실행.bat
+                    echo 'echo Main Features:' >> package/다방크롤러_실행.bat
+                    echo 'echo - Automatic property data collection from Dabang' >> package/다방크롤러_실행.bat
+                    echo 'echo - Excel file export' >> package/다방크롤러_실행.bat
+                    echo 'echo - Improved CSS selectors for accurate data parsing' >> package/다방크롤러_실행.bat
+                    echo 'echo - Disabled duplicate removal (collect all data)' >> package/다방크롤러_실행.bat
+                    echo 'echo.' >> package/다방크롤러_실행.bat
+                    echo 'echo 1. GUI Mode (Graphical Interface)' >> package/다방크롤러_실행.bat
+                    echo 'echo 2. CLI Mode (Command Line Interface)' >> package/다방크롤러_실행.bat
+                    echo 'echo 3. Edit Settings File' >> package/다방크롤러_실행.bat
+                    echo 'echo 4. View Logs' >> package/다방크롤러_실행.bat
+                    echo 'echo 5. Open Output Folder' >> package/다방크롤러_실행.bat
+                    echo 'echo.' >> package/다방크롤러_실행.bat
+                    echo 'set /p choice="Select option (1-5): "' >> package/다방크롤러_실행.bat
+                    echo 'if "%choice%"=="1" (' >> package/다방크롤러_실행.bat
+                    echo '    echo Starting GUI mode...' >> package/다방크롤러_실행.bat
+                    echo '    if exist "다방크롤러.exe" (' >> package/다방크롤러_실행.bat
+                    echo '        start "" "다방크롤러.exe"' >> package/다방크롤러_실행.bat
+                    echo '    ) else (' >> package/다방크롤러_실행.bat
+                    echo '        echo Error: 다방크롤러.exe not found!' >> package/다방크롤러_실행.bat
+                    echo '        echo Please check if the file exists in the current directory.' >> package/다방크롤러_실행.bat
+                    echo '        pause' >> package/다방크롤러_실행.bat
+                    echo '    )' >> package/다방크롤러_실행.bat
+                    echo ') else if "%choice%"=="2" (' >> package/다방크롤러_실행.bat
+                    echo '    echo CLI Mode Usage:' >> package/다방크롤러_실행.bat
+                    echo '    echo.' >> package/다방크롤러_실행.bat
+                    echo '    echo Basic Usage:' >> package/다방크롤러_실행.bat
+                    echo '    echo 다방크롤러_CLI.exe --region "region_name" --type "property_type" --limit count' >> package/다방크롤러_실행.bat
+                    echo '    echo.' >> package/다방크롤러_실행.bat
+                    echo '    echo Examples:' >> package/다방크롤러_실행.bat
+                    echo '    echo 다방크롤러_CLI.exe --region "Seoul Gangnam" --type "원룸" --limit 10' >> package/다방크롤러_실행.bat
+                    echo '    echo 다방크롤러_CLI.exe --region "Busan Haeundae" --type "아파트" --limit 20' >> package/다방크롤러_실행.bat
+                    echo '    echo.' >> package/다방크롤러_실행.bat
+                    echo '    echo Property Types: 원룸, 투룸, 아파트, 주택/빌라, 오피스텔' >> package/다방크롤러_실행.bat
+                    echo '    echo.' >> package/다방크롤러_실행.bat
+                    echo '    pause' >> package/다방크롤러_실행.bat
+                    echo ') else if "%choice%"=="3" (' >> package/다방크롤러_실행.bat
+                    echo '    echo Opening settings file...' >> package/다방크롤러_실행.bat
+                    echo '    if exist "config\settings.toml" (' >> package/다방크롤러_실행.bat
+                    echo '        notepad config\settings.toml' >> package/다방크롤러_실행.bat
+                    echo '    ) else (' >> package/다방크롤러_실행.bat
+                    echo '        echo Error: settings.toml not found!' >> package/다방크롤러_실행.bat
+                    echo '        pause' >> package/다방크롤러_실행.bat
+                    echo '    )' >> package/다방크롤러_실행.bat
+                    echo ') else if "%choice%"=="4" (' >> package/다방크롤러_실행.bat
+                    echo '    echo Opening logs folder...' >> package/다방크롤러_실행.bat
+                    echo '    if exist "logs\*.log" (' >> package/다방크롤러_실행.bat
+                    echo '        start "" logs' >> package/다방크롤러_실행.bat
+                    echo '    ) else (' >> package/다방크롤러_실행.bat
+                    echo '        echo No log files found.' >> package/다방크롤러_실행.bat
+                    echo '        pause' >> package/다방크롤러_실행.bat
+                    echo '    )' >> package/다방크롤러_실행.bat
+                    echo ') else if "%choice%"=="5" (' >> package/다방크롤러_실행.bat
+                    echo '    echo Opening output folder...' >> package/다방크롤러_실행.bat
+                    echo '    if exist "output\*.xlsx" (' >> package/다방크롤러_실행.bat
+                    echo '        start "" output' >> package/다방크롤러_실행.bat
+                    echo '    ) else (' >> package/다방크롤러_실행.bat
+                    echo '        echo No output files found.' >> package/다방크롤러_실행.bat
+                    echo '        pause' >> package/다방크롤러_실행.bat
+                    echo '    )' >> package/다방크롤러_실행.bat
+                    echo ') else (' >> package/다방크롤러_실행.bat
+                    echo '    echo Invalid selection.' >> package/다방크롤러_실행.bat
+                    echo '    pause' >> package/다방크롤러_실행.bat
+                    echo ')' >> package/다방크롤러_실행.bat
         
     - name: Create README for package
       run: |
