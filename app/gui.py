@@ -18,6 +18,7 @@ if str(ROOT) not in sys.path:
 
 from config import settings  # noqa: E402
 from app.widgets.region_picker import RegionPicker  # noqa: E402
+from app.updater import check_updates  # noqa: E402
 
 
 class App(tk.Tk):
@@ -97,6 +98,13 @@ class App(tk.Tk):
         # 실행 버튼
         control_frame = ttk.Frame(self)
         control_frame.pack(fill=tk.X, padx=pad, pady=pad)
+        
+        # 업데이트 체크 버튼
+        update_frame = ttk.Frame(self)
+        update_frame.pack(fill=tk.X, padx=pad, pady=pad)
+        
+        ttk.Button(update_frame, text="🔄 업데이트 체크", 
+                  command=self._check_updates).pack(side=tk.LEFT, padx=pad)
         
         self.start_btn = ttk.Button(control_frame, text="🚀 수집 시작", command=self._on_start)
         self.start_btn.pack(side=tk.LEFT, padx=pad)
@@ -352,6 +360,28 @@ class App(tk.Tk):
             self.start_btn.config(state=tk.NORMAL)
             self.stop_btn.config(state=tk.DISABLED)
             self._process = None
+    
+    def _check_updates(self) -> None:
+        """업데이트 체크"""
+        try:
+            self._append_log("🔄 업데이트를 확인하는 중...")
+            has_update, latest_version, download_url = check_updates()
+            
+            if has_update:
+                self._append_log(f"📦 새로운 버전이 있습니다: {latest_version}")
+                self._append_log(f"🔗 다운로드: {download_url}")
+                
+                # 업데이트 다운로드 확인
+                if messagebox.askyesno("업데이트", 
+                                     f"새로운 버전 {latest_version}이 있습니다.\n다운로드 페이지를 여시겠습니까?"):
+                    import webbrowser
+                    webbrowser.open(download_url)
+            else:
+                self._append_log("✅ 최신 버전을 사용 중입니다.")
+                
+        except Exception as e:
+            logger.exception("업데이트 체크 중 오류: {}", e)
+            self._append_log(f"❌ 업데이트 체크 실패: {e}")
 
 
 def main() -> None:
