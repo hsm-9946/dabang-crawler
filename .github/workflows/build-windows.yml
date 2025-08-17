@@ -14,7 +14,7 @@ jobs:
     
     strategy:
       matrix:
-        python-version: [3.10, 3.11, 3.12]  # Python 3.12 추가
+        python-version: [3.12]  # 빌드 시간 단축을 위해 3.12만 사용
     
     env:
       # Windows 한국어 환경 설정
@@ -48,16 +48,6 @@ jobs:
         playwright install chromium
         playwright install-deps chromium
         
-        # Windows 한국어 폰트 확인
-        echo "Windows 한국어 폰트 확인 중..."
-        Get-ChildItem "C:\Windows\Fonts" | Where-Object {$_.Name -like "*gothic*" -or $_.Name -like "*malgun*" -or $_.Name -like "*nanum*"} | Select-Object Name
-        
-        # 시스템 로케일 설정
-        echo "현재 시스템 로케일:"
-        Get-WinSystemLocale
-        echo "사용 가능한 로케일:"
-        Get-WinUserLanguageList
-        
     - name: Create build directory
       run: |
         mkdir build
@@ -67,11 +57,11 @@ jobs:
         
     - name: Build executables using spec file
       run: |
-        pyinstaller build_config.spec
+        pyinstaller build_config.spec --noconfirm --clean
         if ($LASTEXITCODE -ne 0) {
           Write-Host "Spec 파일 빌드 실패, 기본 설정으로 재시도..."
-          pyinstaller --onefile --windowed --name "다방크롤러" --icon "assets/icon.ico" app/gui.py
-          pyinstaller --onefile --name "다방크롤러_CLI" --icon "assets/icon.ico" app/cli_collect.py
+          pyinstaller --onefile --windowed --name "다방크롤러" --icon "assets/icon.ico" --noconfirm --clean app/gui.py
+          pyinstaller --onefile --name "다방크롤러_CLI" --icon "assets/icon.ico" --noconfirm --clean app/cli_collect.py
         }
         
     - name: Create package directory
