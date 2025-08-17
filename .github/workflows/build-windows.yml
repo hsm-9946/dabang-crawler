@@ -16,6 +16,14 @@ jobs:
       matrix:
         python-version: [3.10, 3.11, 3.12]  # Python 3.12 추가
     
+    env:
+      # Windows 한국어 환경 설정
+      PYTHONIOENCODING: utf-8
+      PYTHONUTF8: 1
+      # Windows 시스템 로케일 설정
+      SYSTEMROOT: C:\Windows
+      WINDIR: C:\Windows
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -39,6 +47,16 @@ jobs:
         pip install -r requirements.txt
         playwright install chromium
         playwright install-deps chromium
+        
+        # Windows 한국어 폰트 확인
+        echo "Windows 한국어 폰트 확인 중..."
+        Get-ChildItem "C:\Windows\Fonts" | Where-Object {$_.Name -like "*gothic*" -or $_.Name -like "*malgun*" -or $_.Name -like "*nanum*"} | Select-Object Name
+        
+        # 시스템 로케일 설정
+        echo "현재 시스템 로케일:"
+        Get-WinSystemLocale
+        echo "사용 가능한 로케일:"
+        Get-WinUserLanguageList
         
     - name: Create build directory
       run: |

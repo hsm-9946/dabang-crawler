@@ -10,6 +10,7 @@ import subprocess
 import json
 import sys
 import os
+import locale
 from pathlib import Path as _P
 
 # GUI 모드에서 터미널 창 숨기기
@@ -17,6 +18,15 @@ if getattr(sys, 'frozen', False):
     # PyInstaller로 빌드된 경우
     import ctypes
     ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
+
+# 한국어 로케일 설정
+try:
+    locale.setlocale(locale.LC_ALL, 'ko_KR.UTF-8')
+except:
+    try:
+        locale.setlocale(locale.LC_ALL, 'Korean_Korea.949')
+    except:
+        pass
 
 # Ensure project root in path for direct execution
 ROOT = _P(__file__).resolve().parents[1]
@@ -31,8 +41,18 @@ from app.updater import check_updates  # noqa: E402
 class App(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
-        self.title("다방 매물 수집기 (TypeScript)")
-        self.geometry("1000x800")
+        
+        # Windows 스타일 적용
+        self._apply_windows_style()
+        
+        self.title("다방 매물 수집기 v2.0 - TypeScript 기반 개선")
+        self.geometry("1200x900")
+        
+        # Windows 작업 표시줄 아이콘 설정
+        self._set_taskbar_icon()
+        
+        # 한국어 폰트 최적화
+        self._setup_korean_fonts()
 
         # state
         self._worker: Optional[threading.Thread] = None
@@ -42,6 +62,72 @@ class App(tk.Tk):
 
         # widgets
         self._build_widgets()
+        
+        # 업데이트 체크
+        self._check_updates()
+
+    def _apply_windows_style(self):
+        """Windows 네이티브 스타일 적용"""
+        try:
+            # Windows 10/11 스타일 적용
+            self.tk.call('source', 'azure.tcl')
+            self.tk.call('set_theme', 'light')
+        except:
+            # 기본 Windows 스타일
+            self.style = ttk.Style()
+            self.style.theme_use('clam')
+            
+            # 한국어 폰트 설정
+            self.style.configure('.', font=('맑은 고딕', 9))
+            self.style.configure('Title.TLabel', font=('맑은 고딕', 12, 'bold'))
+            self.style.configure('Header.TLabel', font=('맑은 고딕', 10, 'bold'))
+            self.style.configure('Button.TButton', font=('맑은 고딕', 9))
+            self.style.configure('Checkbutton.TCheckbutton', font=('맑은 고딕', 9))
+
+    def _set_taskbar_icon(self):
+        """Windows 작업 표시줄 아이콘 설정"""
+        try:
+            icon_path = ROOT / "assets" / "icon.ico"
+            if icon_path.exists():
+                self.iconbitmap(str(icon_path))
+        except:
+            pass
+
+    def _setup_korean_fonts(self):
+        """한국어 폰트 최적화"""
+        # Windows 기본 한국어 폰트들
+        korean_fonts = [
+            '맑은 고딕',
+            'Malgun Gothic', 
+            'NanumGothic',
+            'NanumBarunGothic',
+            'Dotum',
+            'Gulim'
+        ]
+        
+        # 사용 가능한 폰트 찾기
+        available_fonts = list(tk.font.families())
+        for font in korean_fonts:
+            if font in available_fonts:
+                self.default_font = font
+                break
+        else:
+            self.default_font = 'TkDefaultFont'
+
+    def _check_updates(self):
+        """업데이트 체크 (백그라운드)"""
+        def check():
+            try:
+                update_available = check_updates()
+                if update_available:
+                    self.after(0, lambda: messagebox.showinfo(
+                        "업데이트 알림", 
+                        "새로운 버전이 있습니다!\nGitHub에서 최신 버전을 다운로드하세요."
+                    ))
+            except:
+                pass
+        
+        threading.Thread(target=check, daemon=True).start()
 
     def _build_widgets(self) -> None:
         pad = 8
@@ -49,8 +135,8 @@ class App(tk.Tk):
         # 제목
         title_frame = ttk.Frame(self)
         title_frame.pack(fill=tk.X, padx=pad, pady=pad)
-        ttk.Label(title_frame, text="🏠 다방 매물 수집기 (TypeScript 버전)", 
-                 font=("Arial", 14, "bold")).pack()
+        ttk.Label(title_frame, text="🏠 다방 매물 수집기 v2.0 - TypeScript 기반 개선", 
+                 style="Title.TLabel").pack()
 
         # 매물 유형 선택 (다중 선택 가능)
         property_frame = ttk.LabelFrame(self, text="매물 유형 (다중 선택 가능)")
