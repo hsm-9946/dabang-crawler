@@ -79,4 +79,86 @@ pyinstaller build_config.spec
 - [ ] settings.toml 값 수정 후 재실행 가능
 - [ ] headless/on-off 정상 동작
 
+## 🖥️ Windows 실행 FAQ
+
+### 📥 다운로드 및 설치
+
+#### 1. GitHub Release에서 다운로드
+1. [Releases](https://github.com/hsm-9946/dabang-crawler/releases) 페이지 방문
+2. 최신 버전의 **다방크롤러.exe** 다운로드
+3. **압축 해제 필수** (ZIP 내 더블클릭 실행 금지)
+
+#### 2. Windows 차단 해제
+```powershell
+# PowerShell 관리자 권한으로 실행
+Unblock-File -Path "C:\경로\다방크롤러.exe"
+```
+
+#### 3. 경로/파일명 문제 해결
+```powershell
+# 공백/한글이 포함된 경로는 큰따옴표 사용
+& "C:\경로\다방 크롤러.exe"
+```
+
+### 🚨 실행 문제 해결
+
+#### 파일을 찾을 수 없음
+```powershell
+# 진단 스크립트 실행
+.\scripts\win\diagnose-exe.ps1
+```
+
+#### 바이러스 백신 경고
+1. **Windows Defender**: 파일을 예외 목록에 추가
+2. **기타 백신**: 신뢰할 수 있는 파일로 등록
+3. **Google Drive**: "신뢰할 수 있는 파일"로 표시
+
+#### Playwright 브라우저 오류
+```bash
+# 브라우저 재설치
+python -m playwright install chromium
+```
+
+#### 방화벽/백신 격리
+1. **Windows Defender**: 바이러스 및 위협 방지 → 설정 관리 → 제외 항목 추가
+2. **방화벽**: Windows Defender 방화벽 → 고급 설정 → 인바운드 규칙 추가
+3. **백신**: 파일을 신뢰 목록에 추가
+
+### 🔧 로컬 빌드
+
+#### PowerShell 스크립트 사용 (권장)
+```powershell
+# 빌드 실행
+.\scripts\win\build-exe.ps1
+
+# 진단 실행
+.\scripts\win\diagnose-exe.ps1
+```
+
+#### 수동 빌드
+```bash
+# PyInstaller 설치
+pip install pyinstaller
+
+# 빌드 실행
+pyinstaller --onefile --windowed --name "다방크롤러" app/gui.py
+```
+
+### 📋 시스템 요구사항
+- **OS**: Windows 10/11 (64비트)
+- **RAM**: 최소 4GB (8GB 권장)
+- **저장공간**: 2GB 이상
+- **인터넷**: 안정적인 연결 필요
+
+### 🛡️ 보안 정보
+- **UPX 압축 비활성화**: 바이러스 백신 오탐 방지
+- **SHA256 해시**: 파일 무결성 검증
+- **소스 코드 공개**: GitHub에서 완전한 코드 확인 가능
+- **투명한 빌드**: 모든 과정 문서화
+
+### 📞 추가 지원
+- **GitHub Issues**: [문제 신고](https://github.com/hsm-9946/dabang-crawler/issues)
+- **진단 스크립트**: `.\scripts\win\diagnose-exe.ps1` 실행 후 결과 공유
+- **로그 파일**: `logs/` 폴더의 로그 파일 확인
+
 

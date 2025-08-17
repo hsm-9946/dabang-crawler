@@ -1,0 +1,108 @@
+name: Release Windows EXE
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-win:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+          # playwright 파이썬 사용 시 브라우저 설치 (용량↑ → 필요 시 유지)
+          python -m playwright install chromium || echo "skip"
+
+      - name: Build EXE (PyInstaller)
+        shell: pwsh
+        run: ./scripts/win/build-exe.ps1
+
+      - name: Prepare artifacts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+          Copy-Item "dist/다방크롤러.exe" "artifacts/다방크롤러.exe"
+          Copy-Item "dist/다방크롤러.exe" "artifacts/dabang-crawler-win-x64.exe"
+          
+          # 파일 정보 출력
+          $exePath = "artifacts/다방크롤러.exe"
+          $fileSize = [math]::Round((Get-Item $exePath).Length / 1MB, 2)
+          $fileHash = (Get-FileHash -Algorithm SHA256 $exePath).Hash
+          Write-Host "📄 빌드된 파일: $exePath" -ForegroundColor Green
+          Write-Host "📏 파일 크기: $fileSize MB" -ForegroundColor Green
+          Write-Host "🔐 SHA256: $fileHash" -ForegroundColor Green
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-exe
+          path: artifacts/*
+
+  release:
+    needs: build-win
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-exe
+          path: ./artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/다방크롤러.exe
+            artifacts/dabang-crawler-win-x64.exe
+          body: |
+            ## 🚀 다방크롤러 Windows ${{ github.ref_name }} 릴리즈
+
+            ### 📦 다운로드
+            - **다방크롤러.exe** (한글명, 권장)
+            - **dabang-crawler-win-x64.exe** (영문명, 백업)
+
+            ### ✨ 주요 기능
+            - 다방 부동산 매물 자동 수집
+            - Excel 파일로 데이터 저장
+            - GUI 모드 지원
+            - 지역별, 매물 타입별 필터링
+            - **개선된 CSS 선택자로 정확한 데이터 파싱**
+            - **중복 제거 비활성화 (모든 데이터 수집)**
+
+            ### 🔧 설치 방법
+            1. **다방크롤러.exe** 다운로드
+            2. 압축 해제 (ZIP 내 더블클릭 실행 금지)
+            3. Windows 차단 해제: `Unblock-File -Path "다방크롤러.exe"`
+            4. 더블클릭으로 실행
+
+            ### 📋 지원하는 매물 타입
+            - 원룸, 투룸, 아파트, 주택/빌라, 오피스텔
+
+            ### 🔧 시스템 요구사항
+            - Windows 10/11 (64비트)
+            - 인터넷 연결
+            - 최소 4GB RAM
+
+            ### 🛡️ 보안 정보
+            - UPX 압축 비활성화로 바이러스 백신 오탐 방지
+            - SHA256 해시로 파일 무결성 검증
+            - 완전한 소스 코드 공개 (GitHub)
+
+            ### 📄 라이선스
+            이 소프트웨어는 교육 및 개인 사용 목적으로만 사용하세요.
+            상업적 사용 시 다방의 이용약관을 확인하세요.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
