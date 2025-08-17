@@ -13,12 +13,15 @@ REM 필요한 패키지 설치
 echo 필요한 패키지를 설치합니다...
 pip install --upgrade pip
 pip install -r requirements.txt
-pip install pyinstaller
+playwright install chromium
+playwright install-deps chromium
 
 REM 빌드 디렉토리 생성
 echo 빌드 디렉토리를 생성합니다...
 if not exist "build" mkdir build
 if not exist "dist" mkdir dist
+if not exist "output" mkdir output
+if not exist "logs" mkdir logs
 
 REM PyInstaller로 실행 파일 빌드
 echo 실행 파일을 빌드합니다...
@@ -45,11 +48,11 @@ if not exist "package\output" mkdir package\output
 
 REM 파일 복사
 echo 파일을 복사합니다...
-copy "dist\다방크롤러.exe" "package\"
-copy "dist\다방크롤러_CLI.exe" "package\"
-copy "config\settings.toml" "package\config\"
-copy "data\regions_kr.json" "package\data\"
-copy "README.md" "package\"
+if exist "dist\다방크롤러.exe" copy "dist\다방크롤러.exe" "package\"
+if exist "dist\다방크롤러_CLI.exe" copy "dist\다방크롤러_CLI.exe" "package\"
+if exist "config\settings.toml" copy "config\settings.toml" "package\config\"
+if exist "data\regions_kr.json" copy "data\regions_kr.json" "package\data\"
+if exist "README.md" copy "README.md" "package\"
 
 REM 실행 배치 파일 생성
 echo 실행 배치 파일을 생성합니다...
